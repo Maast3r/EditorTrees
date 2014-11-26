@@ -1,0 +1,957 @@
+package editortrees;
+
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Rectangle2D;
+
+// A node in a height-balanced binary tree with rank.
+// Except for the NULL_sNODE (if you choose to use one), one node cannot
+// belong to two different trees.
+
+public class Node
+{
+
+	enum Code
+	{
+		SAME(0), LEFT(-1), RIGHT(1), WAY_RIGHT(2), WAY_LEFT(-2);
+
+		private int balance;
+
+		private Code(int k)
+		{
+			this.balance = k;
+		}
+
+		public String toString()
+		{
+			switch (this)
+			{
+			case WAY_LEFT:
+				return "//";
+			case LEFT:
+				return "/";
+			case SAME:
+				return "=";
+			case RIGHT:
+				return "\\";
+			case WAY_RIGHT:
+				return "\\\\";
+			default:
+				throw new NullPointerException();
+			}
+		}
+
+	};
+
+	// The fields would normally be private, but for the purposes of this class,
+	// we want to be able to test the results of the algorithms in addition to
+	// the
+	// "publicly visible" effects
+
+	static Node NULL_NODE = new Node();
+	char element;
+	Node left, right; // subtrees
+	int rank; // inorder position of this node within its own subtree.
+	Code balance;
+	Node parent; // You may want this field.
+	int rotationCount = 0;
+
+	private static Color CIRCLE_COLOR = Color.WHITE;
+	private static Color TEXT_COLOR = new Color(0x66ffb2);
+	private Point.Double point;
+	private double radius;
+
+	// Feel free to add other fields that you find useful
+
+	// You will probably want to add several other methods
+
+	public Node(char element, Node parent, int rank)
+	{
+		this.element = element;
+		this.parent = parent;
+		this.rank = rank;
+		this.left = NULL_NODE;
+		this.right = NULL_NODE;
+		this.balance = Code.SAME;
+	}
+
+	public Node(char c)
+	{
+		this.element = c;
+		this.left = NULL_NODE;
+		this.right = NULL_NODE;
+		this.balance = Code.SAME;
+		this.rank = 0;
+	}
+
+	// For the following methods, you should fill in the details so that they
+	// work correctly
+	public Node()
+	{
+		// constructor for null nodes
+		this.parent = null;
+		this.left = null;
+		this.right = null;
+		this.element = '\0';
+	}
+
+	public String toString(String s)
+	{
+		if (this == NULL_NODE)
+		{
+			return "";
+		}
+
+		s += this.left.toString(s) + this.element + "" + this.right.toString(s);
+		return s;
+	}
+
+	public int height()
+	{
+		// finding height of tree in log(n)
+		if (this == NULL_NODE)
+		{
+			return -1;
+		}
+		if (this.balance == Code.SAME)
+		{
+			return this.left.height() + 1;
+		}
+		else if (this.balance == Code.LEFT)
+		{
+			return this.left.height() + 1;
+		}
+		else if (this.balance == Code.RIGHT)
+		{
+			return this.right.height() + 1;
+		}
+		return 1;
+	}
+
+	public int size()
+	{
+		// finding size of tree in log(n)
+		if (this == NULL_NODE)
+			return 0;
+		return this.rank + this.right.size() + 1;
+	}
+
+	public Node add(char c)
+	{
+
+		if (this.right != NULL_NODE)
+		{
+			// keep recursing right until you get to the last node
+			this.right.add(c);
+		}
+		else if (this.right == NULL_NODE)
+		{
+			// once you get to the last node, add new node
+			this.right = new Node(c, this, 0);
+
+			// check codes to see if balancing is needed
+			return balanceCodes(this.right);
+		}
+		if (this.parent == NULL_NODE)
+		{
+			return this;
+		}
+		return this.parent;
+
+	}
+
+	public Node add(char c, int pos)
+	{
+		// base case
+		if (this == NULL_NODE)
+		{
+			return this;
+		}
+
+		if (pos <= this.rank)
+		{
+			// recurse left
+			if (this.left == NULL_NODE)
+			{
+				this.left = new Node(c, this, 0);
+				this.rank++;
+				return balanceCodes(this.left);
+			}
+			else
+			{
+				this.rank++;
+				this.left.add(c, pos);
+			}
+
+		}
+		else if (pos > this.rank)
+		{
+			// recurse right
+			if (this.right == NULL_NODE)
+			{
+				this.right = new Node(c, this, 0);
+				return balanceCodes(this.right);
+			}
+			else
+			{
+				this.right.add(c, pos - (this.rank + 1));
+			}
+		}
+		else
+		{
+			// do nothing
+		}
+
+		if (this.parent != NULL_NODE)
+		{
+			return getRoot(this);
+		}
+		return this;
+	}
+
+	public Node getRoot(Node n)
+	{
+		if (n.parent == NULL_NODE)
+		{
+			return n;
+		}
+		return getRoot(n.parent);
+	}
+
+	public Node balanceCodes(Node n)
+	{
+		Node parent = n.parent;
+
+		if (parent == NULL_NODE)
+		{
+			// base case root
+			// final check for balance codes
+			if (n.balance == Code.LEFT)
+			{
+				if (n.left.balance == Code.LEFT && n.right == NULL_NODE)
+				{
+					// s rotate right
+					System.out.println("single rotate right 1");
+					return rotateRight(n);
+				}
+				else if (n.left.balance == Code.RIGHT
+						&& n.left.right == NULL_NODE)
+				{
+					// d rotate right
+					System.out.println("double rotate right 1");
+					n.left = rotateLeft(n.left);
+					return rotateRight(n);
+				}
+				else
+				{
+					return n;
+				}
+			}
+			else if (n.balance == Code.RIGHT)
+			{
+				if (n.right.balance == Code.RIGHT && n.left == NULL_NODE)
+				{
+					// s rotate left
+					System.out.println("single rotate left 1");
+					return rotateLeft(n);
+				}
+				else if (n.right.balance == Code.LEFT
+						&& n.right.left == NULL_NODE)
+				{
+					// d rotate left
+					System.out.println("double rotate left 1");
+					n.right = rotateRight(n.right);
+					return rotateLeft(n);
+				}
+				else
+				{
+					return n;
+				}
+			}
+			else
+			{
+				// if roots balance code is =
+				return n;
+			}
+		}
+
+		if (parent.left == n)
+		{
+			if (parent.balance == Code.LEFT)
+			{
+				if (n.balance == Code.RIGHT)
+				{
+					// double rotate right
+					System.out.println("double rotate right 2");
+					n = rotateLeft(n);
+					return rotateRight(n.parent);
+				}
+				else if (n.balance == Code.LEFT)
+				{
+					if (n.right.balance != Code.SAME
+							|| n.left.balance != Code.SAME
+							|| n.right == NULL_NODE)
+					{
+						// single rotate right
+						System.out.println("single rotate right 2");
+						return rotateRight(parent);
+					}
+				}
+				else
+				{
+					// set balance left
+					parent.balance = Code.LEFT;
+				}
+			}
+			else if (parent.balance == Code.RIGHT)
+			{
+				if (n.balance == Code.LEFT)
+				{
+					// double rotate left
+					System.out.println("double rotate left 2");
+					n = rotateRight(n);
+					return rotateLeft(n.parent);
+				}
+				else
+				{
+					parent.balance = Code.SAME;
+					// return root so you leave enter base case and leave
+					// recursion
+					return getRoot(n);
+				}
+			}
+			else
+			{
+				// parent balance is left
+				if (n.balance == Code.SAME && n.left != NULL_NODE
+						&& n.right != NULL_NODE)
+				{
+					// do nothing
+				}
+				else
+				{
+					parent.balance = Code.LEFT;
+				}
+			}
+		}
+		else if (parent.right == n)
+		{
+			if (parent.balance == Code.LEFT)
+			{
+				if (n.balance == Code.RIGHT)
+				{
+					// // double rotate right
+					System.out.println("double rotate right 3");
+					n = rotateLeft(n);
+					return rotateRight(n.parent);
+				}
+				else
+				{
+					parent.balance = Code.SAME;
+					return getRoot(n);
+				}
+			}
+			else if (parent.balance == Code.RIGHT)
+			{
+				if (n.balance == Code.LEFT)
+				{
+					// double rotate left
+					System.out.println("double rotate left 3");
+					n = rotateRight(n);
+					return rotateLeft(n.parent);
+				}
+				else if (n.balance == Code.RIGHT)
+				{
+					// single rotate left
+					System.out.println("single rotate left 3");
+					return rotateLeft(parent);
+				}
+				else
+				{
+					// do nothing
+				}
+			}
+			else
+			{
+				// parent balance is equal
+				if (parent.left == NULL_NODE
+						|| n.balance == Code.RIGHT
+						|| (n.balance == Code.LEFT && parent.left.balance == Code.SAME))
+				{
+					parent.balance = Code.RIGHT;
+				}
+				else
+				{
+					// do nothing, keep parent.balance =
+				}
+			}
+		}
+
+		return balanceCodes(n.parent);
+	}
+
+	// public Node rotateLeft(Node n)
+	// {
+	// // single left rotation
+	// Node right = n.right;
+	//
+	// if (n.parent != NULL_NODE)
+	// {
+	// if (n == n.parent.right)
+	// {
+	// n.parent.right = right;
+	// }
+	// else if (n == n.parent.left)
+	// {
+	// n.parent.left = right;
+	// }
+	// }
+	//
+	// // reassigning values
+	// right.parent = n.parent;
+	// n.parent = right;
+	//
+	// n.right = right.left;
+	// right.left = n;
+	//
+	// right.balance = Code.SAME;
+	// n.balance = Code.SAME;
+	//
+	// right.rank += n.rank + 1;
+	//
+	// EditTree.rotationCounter++;
+	//
+	// right.balance = Code.SAME;
+	// n.balance = Code.SAME;
+	//
+	// // balance code changes...
+	// // setBalance(right.left);
+	// // setBalance(right.right);
+	// // setBalance(right);
+	// return right;
+	// }
+
+	public Node rotateLeft(Node n)
+	{
+		// single left rotation
+
+		Node right = n.right;
+		if (n.parent != NULL_NODE)
+		{
+			if (n == n.parent.right)
+			{
+				n.parent.right = right;
+			}
+			else if (n == n.parent.left)
+			{
+				n.parent.left = right;
+			}
+		}
+		// Balance codes change BEFORE rotation
+		right.balance = Code.SAME;
+		if ((right.left != NULL_NODE && n.left != NULL_NODE)
+				|| (right.left == NULL_NODE && n.left == NULL_NODE))
+		{
+			n.balance = Code.SAME;
+		}
+		else if (right.left != NULL_NODE && n.left == NULL_NODE)
+		{
+			n.balance = Code.RIGHT;
+		}
+		else if (right.left == NULL_NODE && n.left != NULL_NODE)
+		{
+			n.balance = Code.LEFT;
+		}
+
+		// reassigning values
+		right.parent = n.parent;
+		n.parent = right;
+		n.right = right.left;
+		right.left = n;
+
+		right.rank += n.rank + 1;
+		EditTree.rotationCounter++;
+
+		// right.balance = Code.SAME;
+		// n.balance = Code.SAME;
+
+		// balance code changes...
+		// setBalance(right.left);
+		// setBalance(right.right);
+		// setBalance(right);
+		return right;
+	}
+
+//	public Node rotateRight(Node n)
+//	{
+//		// single right rotation
+//		Node left = n.left;
+//
+//		if (n.parent != NULL_NODE)
+//		{
+//			if (n == n.parent.right)
+//			{
+//				n.parent.right = left;
+//			}
+//			else if (n == n.parent.left)
+//			{
+//				n.parent.left = left;
+//			}
+//		}
+//
+//		// reassigning values
+//		if (left.right != NULL_NODE)
+//		{
+//			n.rank = left.right.rank + 1;
+//		}
+//		else
+//		{
+//			n.rank = 0;
+//		}
+//		left.parent = n.parent;
+//		n.parent = left;
+//
+//		n.left = left.right;
+//		left.right = n;
+//
+//		left.balance = Code.SAME;
+//		n.balance = Code.SAME;
+//
+//		EditTree.rotationCounter++;
+//		// balance code changes...
+//		// setBalance(left.left);
+//		// setBalance(left.right);
+//		// setBalance(left);
+//		return left;
+//	}
+	
+	public Node rotateRight(Node n) {
+		// rotate
+		// roate child
+		// single right rotation
+		Node left = n.left; // copy constructor
+		/*
+		 * Node left = new Node(n){ left.shit = n.shit left.fucks = n.fucks if
+		 * shallow{ left.otherClass = n.otherClass }else { left.otherClass= new
+		 * OtherClass(n.otherClass)
+		 */
+		if (n.parent != NULL_NODE) {
+			if (n == n.parent.right) {
+				n.parent.right = left;
+			} else if (n == n.parent.left) {
+				n.parent.left = left;
+			}
+		}
+		left.balance = Code.SAME;
+		if ((left.right != NULL_NODE && n.right != NULL_NODE)
+				|| (left.right == NULL_NODE && n.right == NULL_NODE)) {
+			n.balance = Code.SAME;
+		} else if (left.right != NULL_NODE && n.right == NULL_NODE) {
+			n.balance = Code.LEFT;
+		} else if (left.right == NULL_NODE && n.right != NULL_NODE) {
+			n.balance = Code.RIGHT;
+		}
+		// reassigning values
+		if (left.right != NULL_NODE) {
+			// System.out.println("N rank = " + n.rank + ", left right rank = "
+			// + left.right.rank);
+			n.rank = left.right.rank + 1;
+		} else {
+			n.rank = 0;
+		}
+		left.parent = n.parent;
+		n.parent = left;
+		n.left = left.right;
+		left.right = n;
+		// left.balance = Code.SAME;
+		// n.balance = Code.SAME;
+		EditTree.rotationCounter++;
+		// balance code changes...
+		// setBalance(left.left);
+		// setBalance(left.right);
+		// setBalance(left);
+		return left;
+	}
+	
+	public void setBalance(Node n)
+	{
+		//worthless method rn
+		if (n.left != NULL_NODE)
+		{
+			if (n.right != NULL_NODE)
+			{
+				if ((n.left.balance == Code.SAME && n.right.balance == Code.SAME)
+						|| (n.left.balance != Code.SAME && n.right.balance != Code.SAME))
+				{
+					n.balance = Code.SAME; // rework logic
+				}
+				else if (n.left.balance != Code.SAME
+						&& n.right.balance == Code.SAME)
+				{
+					n.balance = Code.LEFT; // rework logic
+				}
+				else if (n.right.balance != Code.SAME
+						&& n.left.balance == Code.SAME)
+				{
+					n.balance = Code.RIGHT; // rework logic
+				}
+			}
+			else if (n.right == NULL_NODE)
+			{
+				n.balance = Code.LEFT;
+			}
+		}
+		else if (n.left == NULL_NODE && n.right != NULL_NODE)
+		{
+			n.balance = Code.RIGHT;
+		}
+		else if (n.left == NULL_NODE && n.right == NULL_NODE)
+		{
+			n.balance = Code.SAME;
+		}
+	}
+
+	public Node delete(int pos)
+	{
+		Node node = this;
+
+		if (pos <= node.rank)
+		{
+			if (pos == node.rank)
+			{
+				// delete node
+
+				node = deleteNode(node);
+
+				if (node.balance == Code.LEFT
+						|| node.balance == Code.SAME
+						|| (node.balance == Code.SAME && node.left != NULL_NODE && node.right != NULL_NODE))
+				{
+					if (node.left != NULL_NODE)
+					{
+						return balanceCodes(node.left);
+					}
+					return balanceCodes(node);
+				}
+				else if (node.balance == Code.RIGHT)
+				{
+					return balanceCodes(node.right);
+				}
+			}
+			else
+			{
+				// recurse left
+				//decrease rank as you go down the tree
+				node.rank--;
+				node.left.delete(pos);
+			}
+		}
+		else if (pos > node.rank)
+		{
+			// recurse right
+			this.right.delete(pos - (node.rank + 1));
+		}
+
+		if (this.parent != NULL_NODE)
+		{
+			return getRoot(this);
+		}
+		return node;
+	}
+
+	public Node deleteNode(Node n)
+	{
+		// returns the node that replaces the one that is deleted
+
+		Node parent = n.parent;
+
+		if (n.left == NULL_NODE && n.right == NULL_NODE)
+		{
+			// deleting a leaf node
+			if (n == parent.left)
+			{
+				parent.left = NULL_NODE;
+			}
+			else if (n == parent.right)
+			{
+				parent.right = NULL_NODE;
+			}
+			return parent;
+		}
+		else if (n.left != NULL_NODE)
+		{
+			if (n.right != NULL_NODE)
+			{
+				// has two children
+				Node rightNode = n.right;
+
+				if (rightNode.left != NULL_NODE)
+				{
+					while (rightNode.left != NULL_NODE)
+					{
+						rightNode.rank--;
+						rightNode = rightNode.left;
+					}
+					rightNode.parent.left = rightNode.right;
+				}
+
+				if (n == parent.left)
+				{
+					parent.left = rightNode;
+				}
+				else if (n == parent.right)
+				{
+					parent.right = rightNode;
+				}
+
+				// leftNode.parent.right = NULL_NODE;
+
+				if (rightNode == n.right)
+				{
+					rightNode.right = n.right.right;
+					rightNode.right.parent = rightNode;
+				}
+				else
+				{
+					rightNode.right = n.right;
+					n.right.parent = rightNode;
+				}
+
+				rightNode.left = n.left;
+				rightNode.left.parent = rightNode;
+				rightNode.parent = n.parent;
+
+				return rightNode;
+			}
+			else
+			{
+				// just a left child
+
+				Node temp = n.left;
+
+				if (temp.right != NULL_NODE)
+				{
+					while (temp.right != NULL_NODE)
+					{
+						temp = temp.right;
+					}
+					temp.parent.right = temp.left;
+				}
+
+				temp.parent = n.parent;
+
+				if (n.parent != NULL_NODE)
+				{
+					if (n == n.parent.left)
+					{
+						n.parent.left = temp;
+					}
+					else if (n == n.parent.right)
+					{
+						n.parent.right = temp;
+					}
+				}
+
+				temp.right = n.right;
+
+				temp.rank = temp.left.rank + 1;
+
+				// rotateRight(n.left);
+
+				return temp;
+			}
+		}
+		else if (n.left == NULL_NODE && n.right != NULL_NODE)
+		{
+			// just a right child
+
+			Node temp = n.right;
+
+			if (temp.left != NULL_NODE)
+			{
+				while (temp.left != NULL_NODE)
+				{
+					temp.rank--;
+					temp = temp.left;
+				}
+			}
+
+			temp.parent = n.parent;
+
+			if (n.parent != NULL_NODE)
+			{
+				if (n == n.parent.left)
+				{
+					n.parent.left = temp;
+				}
+				else if (n == n.parent.right)
+				{
+					n.parent.right = temp;
+				}
+			}
+
+			temp.left = n.left;
+
+			temp.rank = temp.left.rank + 1;
+
+			// rotateLeft(n.right);
+
+			return temp;
+		}
+		return n;
+	}
+
+	public char get(int pos)
+	{
+		if (pos < this.rank)
+		{
+			if (this.left == NULL_NODE)
+			{
+				throw new IndexOutOfBoundsException();
+			}
+			return this.left.get(pos);
+		}
+		else if (pos == this.rank)
+		{
+			return this.element;
+		}
+		else if (pos > this.rank)
+		{
+			if (this.right == NULL_NODE)
+			{
+				throw new IndexOutOfBoundsException();
+			}
+			return this.right.get(pos - this.rank - 1);
+		}
+		return this.element;
+	}
+
+	// public int totalRotationCount()
+	// {
+	// if (this == NULL_NODE)
+	// {
+	// return 0;
+	// }
+	// return this.left.totalRotationCount() + this.rotationCount
+	// + this.right.totalRotationCount();
+	// }
+
+	public Node getLeft()
+	{
+		return this.left;
+	}
+
+	public Node getRight()
+	{
+		return this.right;
+	}
+
+	/**
+	 * sets this.point to the new point
+	 * 
+	 * @param x
+	 * @param y
+	 */
+	public void setPoint(double x, double y)
+	{
+		this.point = new Point.Double(x, y);
+	}
+
+	/**
+	 * sets this.point to the new point
+	 * 
+	 * @param newPoint
+	 */
+	public void setPoint(Point.Double newPoint)
+	{
+		this.point = newPoint;
+	}
+
+	/**
+	 * @returns this.point
+	 */
+	public Point.Double getPoint()
+	{
+		return this.point;
+	}
+
+	/**
+	 * sets this.radius
+	 * 
+	 * @param newRadius
+	 */
+	public void setCircleRadius(double newRadius)
+	{
+		this.radius = newRadius;
+	}
+
+	/**
+	 * 
+	 * @returns this.radius
+	 */
+	public double getCircleRadius()
+	{
+		return this.radius;
+	}
+
+	/**
+	 * draws the node on the current Graphics2D object
+	 * 
+	 * @param g2
+	 */
+	public void displayNode(Graphics2D g2)
+	{
+		// sets the circle outline color
+		g2.setColor(CIRCLE_COLOR);
+		// creates circle taking into account that this.point is the centerPoint
+		Ellipse2D circle = new Ellipse2D.Double(this.point.x - this.radius,
+				this.point.y - this.radius, this.radius * 2, this.radius * 2);
+		g2.draw(circle);
+		// sets the text color
+		g2.setColor(TEXT_COLOR);
+		// finds how much to shift the string to center the letter
+		String rank = this.rank + "";
+		Rectangle2D bounds = g2.getFontMetrics().getStringBounds(rank, g2);
+		int upperLeftX = (int) (this.point.x - bounds.getWidth() / 2);
+		int upperLeftY = (int) (this.point.y - 1 * bounds.getHeight() / 3); // don't
+																			// know
+																			// why
+																			// this
+																			// 1/3
+																			// works
+																			// so
+																			// good
+		g2.drawString(rank, upperLeftX, upperLeftY);
+		String balance = this.balance != null ? this.balance.toString()
+				: "null";
+
+		bounds = g2.getFontMetrics().getStringBounds(balance, g2);
+		upperLeftX = (int) (this.point.x - bounds.getWidth() / 2);
+		upperLeftY = (int) (this.point.y + 1 * bounds.getHeight() / 4); // don't
+																		// know
+																		// why
+																		// this
+																		// 1/3
+																		// works
+																		// so
+																		// good
+		g2.drawString(balance, upperLeftX, upperLeftY);
+
+		String text = String.valueOf(this.element);
+		bounds = g2.getFontMetrics().getStringBounds(text, g2);
+		upperLeftX = (int) (this.point.x - bounds.getWidth() / 2);
+		upperLeftY = (int) (this.point.y + 5 * bounds.getHeight() / 6); // don't
+																		// know
+																		// why
+																		// this
+																		// 1/3
+																		// works
+																		// so
+																		// good
+		g2.drawString(text, upperLeftX, upperLeftY);
+
+	}
+
+}

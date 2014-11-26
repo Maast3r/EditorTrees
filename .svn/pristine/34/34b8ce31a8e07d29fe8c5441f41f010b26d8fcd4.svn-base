@@ -1,0 +1,553 @@
+package editortrees;
+
+import javax.print.attribute.standard.NumberUp;
+import javax.swing.JFrame;
+
+import editortrees.Node.Code;
+
+// A height-balanced binary tree with rank that could be the basis for a text editor.
+
+public class EditTree
+{
+
+	private Node root;
+	public int rotationCounter = 0;
+	private DisplayableBinaryTree display;
+
+	/**
+	 * Construct an empty tree
+	 */
+	public EditTree()
+	{
+		root = Node.NULL_NODE;
+	}
+
+	/**
+	 * Construct a single-node tree whose element is c
+	 * 
+	 * @param c
+	 */
+	public EditTree(char c)
+	{
+		root = new Node(c, this);
+
+	}
+
+	/**
+	 * Create an EditTree whose toString is s. This can be done in O(N) time,
+	 * where N is the length of the tree (repeatedly calling insert() would be
+	 * O(N log N), so you need to find a more efficient way to do this.
+	 * 
+	 * @param s
+	 */
+	public EditTree(String s)
+	{
+
+	}
+
+	/**
+	 * Make this tree be a copy of e, with all new nodes, but the same shape and
+	 * contents.
+	 * 
+	 * @param e
+	 */
+	public EditTree(EditTree e)
+	{
+		this.root = this.treeCopy(e.root, Node.NULL_NODE);
+		this.rotationCounter = e.rotationCounter;
+	}
+
+	/**
+	 * Construct an empty tree
+	 */
+	public EditTree(boolean visable)
+	{
+		// this.root = NULL_HEADER_NODE;
+		this.root = Node.NULL_NODE;
+		this.rotationCounter = 0;
+		// this.hasRotated = false;
+		this.display = new DisplayableBinaryTree(this, 600, 800);
+		this.display.display(visable);
+	}
+
+	/**
+	 * Construct a single-node tree whose element is c
+	 * 
+	 * @param c
+	 */
+	public EditTree(char c, boolean visable)
+	{
+		// this.root = new Node(NULL_HEADER_NODE, c);
+		this.root = new Node(c, Node.NULL_NODE, 0, this);
+		this.rotationCounter = 0;
+		// this.hasRotated = false;
+		this.display = new DisplayableBinaryTree(this, 600, 800);
+		this.display.display(visable);
+	}
+
+	/**
+	 * 
+	 * @return the height of this tree
+	 */
+	public int height()
+	{
+		return this.root.height();
+	}
+
+	/**
+	 * 
+	 * returns the total number of rotations done in this tree since it was
+	 * created. A double rotation counts as two.
+	 * 
+	 * @return number of rotations since tree was created.
+	 */
+	public int totalRotationCount()
+	{
+		// return this.root.totalRotationCount();
+		return rotationCounter;
+	}
+
+	/**
+	 * return the string produced by an inorder traversal of this tree
+	 */
+	@Override
+	public String toString()
+	{
+		String s = "";
+		return this.root.toString(s);
+	}
+
+	/**
+	 * 
+	 * @param pos
+	 *            position in the tree
+	 * @return the character at that position
+	 * @throws IndexOutOfBoundsException
+	 */
+	public char get(int pos) throws IndexOutOfBoundsException
+	{
+		if (pos < 0 || pos > this.root.size() || this.root == Node.NULL_NODE)
+		{
+			throw new IndexOutOfBoundsException();
+		}
+		return this.root.get(pos);
+	}
+
+	/**
+	 * 
+	 * @param c
+	 *            character to add to the end of this tree.
+	 */
+	public void add(char c)
+	{
+		if (this.root == Node.NULL_NODE)
+		{
+			this.root = new Node(c, Node.NULL_NODE, 0, this);
+
+			return;
+		}
+		this.root = this.root.add(c);
+	}
+
+	/**
+	 * 
+	 * @param c
+	 *            character to add
+	 * @param pos
+	 *            character added in this inorder position
+	 * @throws IndexOutOfBoundsException
+	 *             id pos is negative or too large for this tree
+	 */
+	public void add(char c, int pos) throws IndexOutOfBoundsException
+	{
+		if (pos < 0 || pos > this.root.size())
+		{
+			throw new IndexOutOfBoundsException();
+		}
+		if (this.root == Node.NULL_NODE)
+		{
+			this.root = new Node(c, Node.NULL_NODE, 0, this);
+
+			return;
+		}
+		this.root = this.root.add(c, pos);
+	}
+
+	/**
+	 * 
+	 * @return the number of nodes in this tree
+	 */
+	public int size()
+	{
+		if (this.root == Node.NULL_NODE)
+		{
+			return 0;
+		}
+		return this.root.size();
+	}
+
+	/**
+	 * 
+	 * @param pos
+	 *            position of character to delete from this tree
+	 * @return the character that is deleted
+	 * @throws IndexOutOfBoundsException
+	 */
+	public char delete(int pos) throws IndexOutOfBoundsException
+	{
+		int size = this.root.size();
+		if (pos < 0 || pos > size || size == 0)
+		{
+			throw new IndexOutOfBoundsException();
+		}
+		// Implementation requirement:
+		// When deleting a node with two children, you normally replace the
+		// node to be deleted with either its in-order successor or predecessor.
+		// The tests assume assume that you will replace it with the
+		// *successor*.
+		char elemente = this.root.get(pos);
+		this.root = this.root.delete(pos);
+		return elemente; // replace by a real calculation.
+	}
+
+	/**
+	 * This method operates in O(length*log N), where N is the size of this
+	 * tree.
+	 * 
+	 * @param pos
+	 *            location of the beginning of the string to retrieve
+	 * @param length
+	 *            length of the string to retrieve
+	 * @return string of length that starts in position pos
+	 * @throws IndexOutOfBoundsException
+	 *             unless both pos and pos+length-1 are legitimate indexes
+	 *             within this tree.
+	 */
+	public String get(int pos, int length) throws IndexOutOfBoundsException
+	{
+		if (pos >= 0 && pos+length-1 < this.root.size())
+		{
+			
+		}
+		else
+		{
+			throw new IndexOutOfBoundsException();
+		}
+		return "";
+	}
+
+	/**
+	 * This method is provided for you, and should not need to be changed. If
+	 * split() and concatenate() are O(log N) operations as required, delete
+	 * should also be O(log N)
+	 * 
+	 * @param start
+	 *            position of beginning of string to delete
+	 * 
+	 * @param length
+	 *            length of string to delete
+	 * @return an EditTree containing the deleted string
+	 * @throws IndexOutOfBoundsException
+	 *             unless both start and start+length-1 are in range for this
+	 *             tree.
+	 */
+	public EditTree delete(int start, int length)
+			throws IndexOutOfBoundsException
+	{
+		if (start < 0 || start + length >= this.size())
+			throw new IndexOutOfBoundsException(
+					(start < 0) ? "negative first argument to delete"
+							: "delete range extends past end of string");
+		EditTree t2 = this.split(start);
+		EditTree t3 = t2.split(length);
+		this.concatenate(t3);
+		return t2;
+	}
+
+	/**
+	 * Append (in time proportional to the log of the size of the larger tree)
+	 * the contents of the other tree to this one. Other should be made empty
+	 * after this operation.
+	 * 
+	 * @param other
+	 * @throws IllegalArgumentException
+	 *             if this == other
+	 */
+	public void concatenate(EditTree other) throws IllegalArgumentException
+	{
+		if (this.equals(other))
+		{
+			// if they're the same tree
+			throw new IllegalArgumentException();
+		}
+		if (this.root == Node.NULL_NODE && other.root == Node.NULL_NODE)
+		{
+			// both are empty trees
+		}
+		else
+		{
+			if (this.root == Node.NULL_NODE)
+			{
+				// if this tree is empty
+				this.root = other.root;
+			}
+			else if (other.root == Node.NULL_NODE)
+			{
+				// adding a null tree
+			}
+
+			// delete the leftmost inorder element of the smaller tree
+			// and call the rest of the tree V
+			else if (this.root.nodeHeight >= other.root.nodeHeight)
+			{
+				char qElement = other.delete(0);
+
+				EditTree V = other;
+
+				this.root = pasteTreeR(this, V, qElement);
+			}
+			else
+			{
+				int size = this.size();
+				
+				char qElement = this.delete(size-1);
+
+				EditTree V = this;
+
+				this.root = pasteTreeL(other, V, qElement);
+			}
+
+			// making the other tree a null tree
+			other.root = Node.NULL_NODE;
+		}
+	}
+
+	public Node pasteTreeR(EditTree T, EditTree V, char qElement)
+	{
+		// returns root of tree
+
+		int heightOfT = T.getRoot().nodeHeight;
+		int heightOfV = V.getRoot().nodeHeight;
+
+		Node p = T.root;
+		int hp = heightOfT;
+		Node parent = Node.NULL_NODE;
+
+		while (hp - heightOfV > 1)
+		{
+			//go right until you find a place to insert the tree without
+			//changing the height
+			if (p.balance == Code.LEFT)
+			{
+				// you subtract two since the left subtree height had 1 less
+				// than the current height subtree height, and since the
+				// balance code was to the left, you know that the height of
+				// the node you're going to is one less than the left subtree
+				hp -= 2;
+			}
+			else
+			{
+				hp--;
+			}
+
+			parent = p;
+			p = p.right;
+		}
+
+		//add the new node and reassign values
+		Node q = new Node(qElement, parent, p.rank + 1, T);
+		q.left = p;
+		p.parent = q;
+		
+		q.right = V.root;
+		V.root.parent = q;
+
+		if (hp == heightOfV)
+		{
+			q.balance = Code.SAME;
+		}
+		else
+		{
+			q.balance = Code.LEFT;
+		}
+
+		if (parent != Node.NULL_NODE)
+		{
+			parent.right = q;
+		}
+
+		// overwrite p as q
+		p = q;
+		
+		this.root.setNodeHeight(q);
+		this.root.setNodeHeight(p);
+
+		// rebalance after insertion
+		T.root.balanceCodes(p);
+		
+		p.rank = p.left.size();
+		return p.getRoot(p);
+	}
+
+	public Node pasteTreeL(EditTree T, EditTree V, char qElement)
+	{
+		// returns root of tree
+
+		int heightOfT = T.getRoot().nodeHeight;
+		int heightOfV = V.getRoot().nodeHeight;
+
+		Node p = T.root;
+		int hp = heightOfT;
+		Node parent = Node.NULL_NODE;
+
+		while (hp - heightOfV > 1)
+		{
+			//go right until you find a place to insert the tree without
+			//changing the height
+			if (p.balance == Code.RIGHT)
+			{
+				// same as before but mirror
+				hp -= 2;
+			}
+			else
+			{
+				hp--;
+			}
+
+			parent = p;
+			p = p.left;
+		}
+
+		//add the new node and reassign values
+		Node q = new Node(qElement, parent, V.root.rank + 1, T);
+		q.right = p;
+		p.parent = q;
+
+		q.left = V.root;
+		V.root.parent = q;
+
+		if (hp == heightOfV)
+		{
+			q.balance = Code.SAME;
+		}
+		else
+		{
+			q.balance = Code.RIGHT;
+		}
+
+		if (parent != Node.NULL_NODE)
+		{
+			parent.left = q;
+		}
+
+		// overwrite p as q
+		p = q;
+		
+		this.root.setNodeHeight(q);
+		this.root.setNodeHeight(p);
+
+		// rebalance after insertion
+		T.root.balanceCodes(p);
+
+		return p.getRoot(p);
+	}
+
+	/**
+	 * This operation must be done in time proportional to the height of this
+	 * tree.
+	 * 
+	 * @param pos
+	 *            where to split this tree
+	 * @return a new tree containing all of the elements of this tree whose
+	 *         positions are >= position. Their nodes are removed from this
+	 *         tree.
+	 * @throws IndexOutOfBoundsException
+	 */
+	public EditTree split(int pos) throws IndexOutOfBoundsException
+	{
+		int size = this.root.size();
+		if (pos < 0 || pos > size || size == 0)
+		{
+			throw new IndexOutOfBoundsException();
+		}
+
+		this.root = this.root.split(pos);
+		return this; // replace by a real calculation.
+	}
+
+	/**
+	 * Don't worry if you can't do this one efficiently.
+	 * 
+	 * @param s
+	 *            the string to look for
+	 * @return the position in this tree of the first occurrence of s; -1 if s
+	 *         does not occur
+	 */
+	public int find(String s)
+	{
+		return this.toString().indexOf(s);
+	}
+
+	/**
+	 * 
+	 * @param s
+	 *            the string to search for
+	 * @param pos
+	 *            the position in the tree to begin the search
+	 * @return the position in this tree of the first occurrence of s that does
+	 *         not occur before position pos; -1 if s does not occur
+	 */
+	public int find(String s, int pos)
+	{
+		if(find(s) < pos)
+		{
+			return -1;
+		}
+		return find(s);
+	}
+
+	/**
+	 * @return The root of this tree.
+	 */
+	public Node getRoot()
+	{
+		return this.root;
+	}
+
+	public Node treeCopy(Node n, Node parent)
+	{
+		if (n == Node.NULL_NODE)
+		{
+			root = Node.NULL_NODE;
+			return root;
+		}
+		Node root = new Node(n, this);
+		if (n.left != Node.NULL_NODE && n.right != Node.NULL_NODE)
+		{
+			// both
+			root.left = treeCopy(n.left, root);
+			root.right = treeCopy(n.right, root);
+		}
+		else if (n.left != Node.NULL_NODE && n.right == Node.NULL_NODE)
+		{
+			// left
+			root.left = treeCopy(n.left, root);
+		}
+		else if (n.left == Node.NULL_NODE && n.right != Node.NULL_NODE)
+		{
+			// right
+			root.right = this.treeCopy(n.right, root);
+		}
+		// all
+		root.parent = parent;
+		return root;
+	}
+	
+	public void show() {
+		if (this.display == null){
+			this.display = new DisplayableBinaryTree(this, 1000, 960);
+		}
+		this.display.display();
+	}
+
+}
